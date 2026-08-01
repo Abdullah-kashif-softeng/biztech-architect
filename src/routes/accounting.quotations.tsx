@@ -320,29 +320,35 @@ export function PrintModal({ doc, kind, onClose, onEdit }: { doc: any; kind: "qu
     })();
   }, [doc.id, kind]);
 
-  async function downloadPdf() {
+  async function buildPdf() {
     const node = document.getElementById("print-doc-node");
-    if (!node) return;
+    if (!node) throw new Error("Nothing to export");
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      import("html2canvas-pro"),
+      import("jspdf"),
+    ]);
+    const canvas = await html2canvas(node as HTMLElement, { scale: 2, backgroundColor: "#ffffff" });
+    const pdf = new jsPDF({ unit: "pt", format: "a4" });
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const imgH = (canvas.height * pw) / canvas.width;
+    const img = canvas.toDataURL("image/jpeg", 0.95);
+    let y = 0;
+    pdf.addImage(img, "JPEG", 0, 0, pw, imgH);
+    while (imgH - y > ph) {
+      y += ph;
+      pdf.addPage();
+      pdf.addImage(img, "JPEG", 0, -y, pw, imgH);
+    }
+    const filename = `${kind === "quotation" ? "Quotation" : "Invoice"}-${String(doc.number).replace(/\//g, "-")}.pdf`;
+    return { pdf, filename };
+  }
+
+  async function downloadPdf() {
     setDownloading(true);
     try {
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-        import("html2canvas-pro"),
-        import("jspdf"),
-      ]);
-      const canvas = await html2canvas(node as HTMLElement, { scale: 2, backgroundColor: "#ffffff" });
-      const pdf = new jsPDF({ unit: "pt", format: "a4" });
-      const pw = pdf.internal.pageSize.getWidth();
-      const ph = pdf.internal.pageSize.getHeight();
-      const imgH = (canvas.height * pw) / canvas.width;
-      const img = canvas.toDataURL("image/jpeg", 0.95);
-      let y = 0;
-      pdf.addImage(img, "JPEG", 0, 0, pw, imgH);
-      while (imgH - y > ph) {
-        y += ph;
-        pdf.addPage();
-        pdf.addImage(img, "JPEG", 0, -y, pw, imgH);
-      }
-      pdf.save(`${kind === "quotation" ? "Quotation" : "Invoice"}-${String(doc.number).replace(/\//g, "-")}.pdf`);
+      const { pdf, filename } = await buildPdf();
+      pdf.save(filename);
     } catch (e: any) {
       toast.error(e?.message || "Could not generate PDF");
     } finally { setDownloading(false); }
@@ -355,6 +361,27 @@ export function PrintModal({ doc, kind, onClose, onEdit }: { doc: any; kind: "qu
     window.open(waLink(phone, msg), "_blank");
   }
 
+  async function sendPdfWhatsApp() {
+    setDownloading(true);
+    try {
+      const { pdf, filename } = await buildPdf();
+      const blob = pdf.output("blob") as Blob;
+      const file = new File([blob], filename, { type: "application/pdf" });
+      const nav: any = navigator;
+      if (nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], title: filename, text: `${kind === "quotation" ? "Quotation" : "Invoice"} ${doc.number}` });
+        return;
+      }
+      // Desktop fallback: save the PDF, then open the WhatsApp chat to attach it
+      pdf.save(filename);
+      const phone = doc.customer_snapshot?.phone || "";
+      if (phone) window.open(waLink(phone, `${kind === "quotation" ? "Quotation" : "Invoice"} ${doc.number} — PDF attached.`), "_blank");
+      toast.success("PDF downloaded — attach it in the WhatsApp chat that just opened");
+    } catch (e: any) {
+      if (e?.name !== "AbortError") toast.error(e?.message || "Could not share PDF");
+    } finally { setDownloading(false); }
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-800/80 overflow-y-auto" onClick={onClose}>
       <div className="min-h-screen py-8" onClick={(e) => e.stopPropagation()}>
@@ -362,7 +389,8 @@ export function PrintModal({ doc, kind, onClose, onEdit }: { doc: any; kind: "qu
           <div className="text-white font-semibold">{doc.number}</div>
           <div className="flex flex-wrap gap-2 justify-end">
             {onEdit && <button onClick={onEdit} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white text-slate-800 text-sm font-semibold"><Pencil className="h-4 w-4"/>Edit</button>}
-            <button onClick={sendWhatsApp} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-semibold"><MessageCircle className="h-4 w-4"/>WhatsApp</button>
+            <button onClick={sendPdfWhatsApp} disabled={downloading} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-semibold disabled:opacity-60"><MessageCircle className="h-4 w-4"/>WhatsApp PDF</button>
+            <button onClick={sendWhatsApp} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-emerald-700/90 text-white text-sm font-semibold"><MessageCircle className="h-4 w-4"/>WhatsApp Text</button>
             <button onClick={downloadPdf} disabled={downloading} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-slate-900 text-white text-sm font-semibold disabled:opacity-60"><Download className="h-4 w-4"/>{downloading ? "Preparing…" : "Download PDF"}</button>
             <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold"><Printer className="h-4 w-4"/>Print</button>
             <button onClick={onClose} className="p-2 rounded-md bg-white/10 text-white"><X className="h-4 w-4"/></button>
