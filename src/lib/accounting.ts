@@ -57,3 +57,50 @@ export function addDays(dateStr: string, days: number): string {
 }
 
 export const TAX_PRESETS = [0, 5, 10, 16, 17, 18];
+
+/** Pakistan tax authority naming: PRA services tax = 5%, GST = 10% / 16% / 17% / 18% */
+export function taxName(rate: number): string {
+  const r = Number(rate) || 0;
+  if (r === 5) return "PRA";
+  if (r > 0) return "GST";
+  return "Tax";
+}
+
+export function taxLabel(rate: number): string {
+  const r = Number(rate) || 0;
+  return `${taxName(r)} ${r}%`;
+}
+
+export const TAX_OPTIONS = [
+  { rate: 0, label: "No Tax (0%)" },
+  { rate: 5, label: "PRA 5%" },
+  { rate: 10, label: "GST 10%" },
+  { rate: 16, label: "GST 16%" },
+  { rate: 17, label: "GST 17%" },
+  { rate: 18, label: "GST 18%" },
+];
+
+export function waLink(phone: string, text: string): string {
+  const digits = (phone || "").replace(/[^\d]/g, "");
+  const num = digits.startsWith("0") ? "92" + digits.slice(1) : digits;
+  return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
+}
+
+export function docMessage(kind: "quotation" | "invoice", doc: any, items: any[], company = "EverTech Corporation"): string {
+  const c = doc.customer_snapshot || {};
+  const title = kind === "quotation" ? "Quotation" : "Sales Tax Invoice";
+  const lines = items.map((it, i) => `${i + 1}. ${it.description} — ${it.quantity} x ${fmtMoney(Number(it.unit_price))} = ${fmtMoney(Number(it.amount))}`);
+  return [
+    `*${company}*`,
+    `${title}: ${doc.number}`,
+    `Date: ${fmtDate(doc.date)}`,
+    c.company || c.name ? `For: ${c.company || c.name}` : "",
+    "",
+    ...lines,
+    "",
+    `Subtotal: ${fmtMoney(Number(doc.subtotal))}`,
+    Number(doc.tax_rate) > 0 ? `${taxLabel(Number(doc.tax_rate))}: ${fmtMoney(Number(doc.tax_amount))}` : "",
+    `*Grand Total: ${fmtMoney(Number(doc.total))}*`,
+    kind === "invoice" && doc.due_date ? `Due Date: ${fmtDate(doc.due_date)}` : "",
+  ].filter(Boolean).join("\n");
+}

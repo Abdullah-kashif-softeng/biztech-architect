@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Printer, Eye, X, Pencil } from "lucide-react";
+import { Plus, Trash2, Printer, Eye, X, Pencil, Download, MessageCircle } from "lucide-react";
 import { Fld, Modal } from "./accounting.customers";
-import { computeTotals, emptyCustomer, fmtDate, fmtMoney, nextDocNumber, addDays, TAX_PRESETS, type Item, type CustomerSnapshot } from "@/lib/accounting";
+import { computeTotals, emptyCustomer, fmtDate, fmtMoney, nextDocNumber, addDays, TAX_PRESETS, TAX_OPTIONS, taxLabel, waLink, docMessage, type Item, type CustomerSnapshot } from "@/lib/accounting";
 import { QuotationPrint, InvoicePrint } from "@/components/accounting/DocumentPrint";
 
 export const Route = createFileRoute("/accounting/quotations")({ component: QuotationsPage });
@@ -238,14 +238,14 @@ export function ItemForm(p: {
         <Fld label="Date" type="date" value={p.date} onChange={p.setDate} />
         <Fld label={p.secondDateLabel} type="date" value={p.secondDate} onChange={p.setSecondDate} />
         <div>
-          <label className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Tax %</label>
+          <label className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Tax ({taxLabel(p.taxRate)})</label>
           <div className="mt-1 flex gap-1">
             <select
               value={TAX_PRESETS.includes(p.taxRate) ? String(p.taxRate) : "custom"}
               onChange={(e) => { if (e.target.value !== "custom") p.setTaxRate(Number(e.target.value)); }}
               className="flex-1 px-2 py-2 rounded-md border border-slate-300 text-sm"
             >
-              {TAX_PRESETS.map((r) => <option key={r} value={r}>{r}%</option>)}
+              {TAX_OPTIONS.map((o) => <option key={o.rate} value={o.rate}>{o.label}</option>)}
               <option value="custom">Custom…</option>
             </select>
             <input
@@ -282,7 +282,7 @@ export function ItemForm(p: {
         <div className="mt-4 flex justify-end">
           <div className="w-72 text-sm space-y-1">
             <div className="flex justify-between"><span>Subtotal</span><span className="font-semibold">{fmtMoney(p.totals.subtotal)}</span></div>
-            <div className="flex justify-between"><span>Tax</span><span className="font-semibold">{fmtMoney(p.totals.tax_amount)}</span></div>
+            <div className="flex justify-between"><span>{taxLabel(p.taxRate)}</span><span className="font-semibold">{fmtMoney(p.totals.tax_amount)}</span></div>
             <div className="flex justify-between pt-2 border-t border-slate-300"><span className="font-bold">Total</span><span className="font-bold">{fmtMoney(p.totals.total)}</span></div>
           </div>
         </div>
@@ -305,6 +305,7 @@ export function ItemForm(p: {
 export function PrintModal({ doc, kind, onClose, onEdit }: { doc: any; kind: "quotation" | "invoice"; onClose: () => void; onEdit?: () => void }) {
   const [items, setItems] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -319,19 +320,56 @@ export function PrintModal({ doc, kind, onClose, onEdit }: { doc: any; kind: "qu
     })();
   }, [doc.id, kind]);
 
+  async function downloadPdf() {
+    const node = document.getElementById("print-doc-node");
+    if (!node) return;
+    setDownloading(true);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas-pro"),
+        import("jspdf"),
+      ]);
+      const canvas = await html2canvas(node as HTMLElement, { scale: 2, backgroundColor: "#ffffff" });
+      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const pw = pdf.internal.pageSize.getWidth();
+      const ph = pdf.internal.pageSize.getHeight();
+      const imgH = (canvas.height * pw) / canvas.width;
+      const img = canvas.toDataURL("image/jpeg", 0.95);
+      let y = 0;
+      pdf.addImage(img, "JPEG", 0, 0, pw, imgH);
+      while (imgH - y > ph) {
+        y += ph;
+        pdf.addPage();
+        pdf.addImage(img, "JPEG", 0, -y, pw, imgH);
+      }
+      pdf.save(`${kind === "quotation" ? "Quotation" : "Invoice"}-${String(doc.number).replace(/\//g, "-")}.pdf`);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not generate PDF");
+    } finally { setDownloading(false); }
+  }
+
+  function sendWhatsApp() {
+    const phone = doc.customer_snapshot?.phone || "";
+    if (!phone) return toast.error("This customer has no phone number — add one to send on WhatsApp");
+    const msg = docMessage(kind, doc, items, settings?.company_name || "EverTech Corporation");
+    window.open(waLink(phone, msg), "_blank");
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-800/80 overflow-y-auto" onClick={onClose}>
       <div className="min-h-screen py-8" onClick={(e) => e.stopPropagation()}>
         <div className="max-w-[860px] mx-auto mb-4 flex items-center justify-between px-4">
           <div className="text-white font-semibold">{doc.number}</div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
             {onEdit && <button onClick={onEdit} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white text-slate-800 text-sm font-semibold"><Pencil className="h-4 w-4"/>Edit</button>}
-            <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold"><Printer className="h-4 w-4"/>Print / Save PDF</button>
+            <button onClick={sendWhatsApp} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-semibold"><MessageCircle className="h-4 w-4"/>WhatsApp</button>
+            <button onClick={downloadPdf} disabled={downloading} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-slate-900 text-white text-sm font-semibold disabled:opacity-60"><Download className="h-4 w-4"/>{downloading ? "Preparing…" : "Download PDF"}</button>
+            <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold"><Printer className="h-4 w-4"/>Print</button>
             <button onClick={onClose} className="p-2 rounded-md bg-white/10 text-white"><X className="h-4 w-4"/></button>
           </div>
         </div>
         {settings && (
-          <div className="print-area">
+          <div className="print-area" id="print-doc-node">
             {kind === "quotation"
               ? <QuotationPrint doc={doc} items={items} settings={settings} />
               : <InvoicePrint doc={doc} items={items} settings={settings} />}
