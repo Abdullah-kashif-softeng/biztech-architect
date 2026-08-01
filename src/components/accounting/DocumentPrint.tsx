@@ -1,5 +1,4 @@
 import evertechLogo from "@/assets/evertech-logo.png";
-import letterhead from "@/assets/evertech-letterhead.png.asset.json";
 import { fmtDate, fmtMoney, taxLabel } from "@/lib/accounting";
 
 type Settings = {
@@ -36,8 +35,14 @@ export function QuotationPrint({ doc, items, settings }: { doc: Doc; items: Item
   return (
     <div className="print-doc bg-white text-slate-900 max-w-[820px] mx-auto p-10 text-[13px]">
       <div className="flex items-start justify-between">
-        <div>
-          <img src={letterhead.url} alt="EverTech Corporation" className="h-[70px] w-auto object-contain" />
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 rounded-lg bg-[#0b1a3a] flex items-center justify-center">
+            <img src={evertechLogo} alt="EverTech Corporation" className="h-11 w-11 object-contain" />
+          </div>
+          <div>
+            <div className="text-2xl font-black tracking-tight text-[#0b1a3a] leading-none">{settings.company_name}</div>
+            <div className="text-[11px] tracking-[0.18em] text-slate-500 mt-1">DELIVERING FUTURE</div>
+          </div>
         </div>
         <div className="text-right">
           <div className="text-4xl font-bold text-[#0b1a3a]">QUOTATION</div>
@@ -118,24 +123,15 @@ export function InvoicePrint({ doc, items, settings }: { doc: Doc; items: Item[]
   const c = doc.customer_snapshot || {};
   return (
     <div className="print-doc bg-white text-slate-900 max-w-[820px] mx-auto p-10 text-[13px]">
-      <div className="flex items-start justify-between pb-4">
-        <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-lg bg-[#0b1a3a] flex items-center justify-center shadow-sm">
-            <img src={evertechLogo} alt="Evertech" className="h-11 w-11 object-contain" />
-          </div>
-          <div>
-            <div className="text-2xl font-black tracking-tight text-[#0b1a3a] leading-none">{settings.company_name}</div>
-            <div className="text-[11px] text-slate-500 tracking-wider mt-1">DELIVERING FUTURE</div>
-            <div className="text-[11px] text-slate-600 mt-2">{settings.address}</div>
-            <div className="text-[11px] text-slate-600">Tel: {settings.phone}{settings.email && <> · {settings.email}</>}</div>
-          </div>
+      <div className="text-center text-black">
+        <div className="text-[34px] font-black tracking-tight uppercase leading-none border-b-2 border-black inline-block pb-1">
+          {settings.company_name}
         </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-[#0b1a3a] leading-none">SALES TAX INVOICE</div>
-          <div className="mt-2 text-[11px] text-slate-600">NTN NO. <span className="font-semibold text-slate-800">{settings.ntn}</span>{settings.strn && <> · STRN <span className="font-semibold text-slate-800">{settings.strn}</span></>}</div>
-        </div>
+        <div className="mt-2 text-[12px] font-semibold">{settings.address}</div>
+        <div className="text-[12px] font-semibold">Tel: {settings.phone}{settings.email && <>{"  "}Email: {settings.email}</>}</div>
+        <div className="mt-3 text-[13px] font-bold">NTN NO. {settings.ntn}{settings.strn && <>{"   "}STRN {settings.strn}</>}</div>
+        <div className="mt-3 text-[20px] font-bold uppercase border-b-2 border-black inline-block">SALES TAX INVOICE</div>
       </div>
-      <div className="h-1 rounded bg-gradient-to-r from-[#0b1a3a] via-[#2c78b8] to-[#3ba7d9]" />
 
       <table className="w-full mt-5 border border-slate-300 border-collapse text-[12px]">
         <tbody>
@@ -167,14 +163,14 @@ export function InvoicePrint({ doc, items, settings }: { doc: Doc; items: Item[]
 
       <table className="w-full mt-4 border border-slate-300 border-collapse text-[12px]">
         <thead>
-          <tr className="bg-[#0b1a3a] text-white">
-            <th className="border border-[#0b1a3a] p-2 w-12">Sr. No.</th>
-            <th className="border border-[#0b1a3a] p-2 text-left">DESCRIPTION</th>
-            <th className="border border-[#0b1a3a] p-2 w-20">Quantity</th>
-            <th className="border border-[#0b1a3a] p-2 w-24">Unit Price (Rs.)</th>
-            <th className="border border-[#0b1a3a] p-2 w-24">Value for Sales Tax (Rs.)</th>
-            <th className="border border-[#0b1a3a] p-2 w-20">{taxLabel(doc.tax_rate)}</th>
-            <th className="border border-[#0b1a3a] p-2 w-28">Value Including Sales Tax</th>
+          <tr className="bg-slate-100 text-black">
+            <th className="border border-slate-400 p-2 w-12">Sr. No.</th>
+            <th className="border border-slate-400 p-2 text-left">DESCRIPTION</th>
+            <th className="border border-slate-400 p-2 w-20">Quantity</th>
+            <th className="border border-slate-400 p-2 w-24">Unit Price (Rs.)</th>
+            <th className="border border-slate-400 p-2 w-24">Value for Sales Tax (Rs.)</th>
+            <th className="border border-slate-400 p-2 w-20">{taxLabel(doc.tax_rate)}</th>
+            <th className="border border-slate-400 p-2 w-28">Value Including Sales Tax</th>
           </tr>
         </thead>
         <tbody>
@@ -199,7 +195,7 @@ export function InvoicePrint({ doc, items, settings }: { doc: Doc; items: Item[]
           {Array.from({ length: Math.max(0, 6 - items.length) }).map((_, i) => (
             <tr key={`e${i}`}><td className="border border-slate-300 p-3"></td><td className="border border-slate-300"></td><td className="border border-slate-300"></td><td className="border border-slate-300"></td><td className="border border-slate-300"></td><td className="border border-slate-300"></td><td className="border border-slate-300"></td></tr>
           ))}
-          <tr className="bg-[#e8eef7] font-bold text-[#0b1a3a]">
+          <tr className="bg-slate-100 font-bold text-black">
             <td className="border border-slate-300 p-2 text-center" colSpan={2}>TOTAL =</td>
             <td className="border border-slate-300 p-2 text-center">{items.reduce((s, it) => s + Number(it.quantity || 0), 0)}</td>
             <td className="border border-slate-300 p-2"></td>

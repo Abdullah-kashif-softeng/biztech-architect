@@ -7,8 +7,8 @@ import { findProduct, findService, type FeaturedItem } from "@/data/catalog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const PHONE = "+923218446447";
-const EMAIL = "info@evertech.com.pk";
+const PHONE = "+923255024236";
+const EMAIL = "sales@evertechcorp.com";
 
 const searchSchema = z.object({
   type: z.enum(["product", "service"]).optional(),

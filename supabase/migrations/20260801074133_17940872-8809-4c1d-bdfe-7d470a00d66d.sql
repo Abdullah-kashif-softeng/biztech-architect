@@ -1,0 +1,1 @@
+UPDATE public.accounting_settings SET phone = '0325 5024236', email = 'sales@evertechcorp.com' WHERE id = 1;

@@ -5,8 +5,8 @@ import { toast } from "sonner";
 
 const reqTypes = ["IT Hardware Supply", "Networking & Infrastructure", "CCTV / Surveillance", "IT Support / AMC", "Corporate Bulk Procurement", "Other"];
 
-const PHONE = "+923218446447"; // update if number differs
-const EMAIL = "info@evertech.com.pk";
+const PHONE = "+923255024236";
+const EMAIL = "sales@evertechcorp.com";
 
 export function Contact() {
   const [sent, setSent] = useState(false);
