@@ -1,5 +1,6 @@
 import evertechLogo from "@/assets/evertech-logo.png";
-import { fmtDate, fmtMoney } from "@/lib/accounting";
+import letterhead from "@/assets/evertech-letterhead.png.asset.json";
+import { fmtDate, fmtMoney, taxLabel } from "@/lib/accounting";
 
 type Settings = {
   company_name: string;
@@ -35,14 +36,8 @@ export function QuotationPrint({ doc, items, settings }: { doc: Doc; items: Item
   return (
     <div className="print-doc bg-white text-slate-900 max-w-[820px] mx-auto p-10 text-[13px]">
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-lg bg-[#0b1a3a] flex items-center justify-center shadow-sm">
-            <img src={evertechLogo} alt="Evertech" className="h-11 w-11 object-contain" />
-          </div>
-          <div>
-            <div className="text-2xl font-black tracking-tight text-[#0b1a3a] leading-none">EverTech Corporation</div>
-            <div className="text-[11px] text-slate-500 tracking-wider mt-1">DELIVERING FUTURE</div>
-          </div>
+        <div>
+          <img src={letterhead.url} alt="EverTech Corporation" className="h-[70px] w-auto object-contain" />
         </div>
         <div className="text-right">
           <div className="text-4xl font-bold text-[#0b1a3a]">QUOTATION</div>
@@ -79,19 +74,18 @@ export function QuotationPrint({ doc, items, settings }: { doc: Doc; items: Item
       <table className="w-full mt-8 border-collapse">
         <thead>
           <tr className="bg-[#0b1a3a] text-white text-left">
-            <th className="px-3 py-2.5 text-[12px] font-semibold">Items</th>
-            <th className="px-3 py-2.5 text-[12px] font-semibold text-center w-24">Quantity</th>
-            <th className="px-3 py-2.5 text-[12px] font-semibold text-right w-32">Price</th>
+            <th className="px-3 py-2.5 text-[12px] font-semibold w-52">Item</th>
+            <th className="px-3 py-2.5 text-[12px] font-semibold">Description</th>
+            <th className="px-3 py-2.5 text-[12px] font-semibold text-center w-20">Quantity</th>
+            <th className="px-3 py-2.5 text-[12px] font-semibold text-right w-28">Price</th>
             <th className="px-3 py-2.5 text-[12px] font-semibold text-right w-32">Amount</th>
           </tr>
         </thead>
         <tbody>
           {items.map((it, i) => (
             <tr key={i} className="border-b border-slate-200 align-top">
-              <td className="px-3 py-3">
-                <div className="font-bold">{it.description}</div>
-                {it.detail && <div className="text-[12px] text-slate-600 whitespace-pre-wrap">{it.detail}</div>}
-              </td>
+              <td className="px-3 py-3 font-bold">{it.description}</td>
+              <td className="px-3 py-3 text-[12px] text-slate-600 whitespace-pre-wrap">{it.detail || "—"}</td>
               <td className="px-3 py-3 text-center">{it.quantity}</td>
               <td className="px-3 py-3 text-right">{fmtMoney(it.unit_price)}</td>
               <td className="px-3 py-3 text-right">{fmtMoney(it.amount)}</td>
@@ -103,7 +97,7 @@ export function QuotationPrint({ doc, items, settings }: { doc: Doc; items: Item
       <div className="mt-6 flex justify-end">
         <div className="w-72 text-sm">
           <div className="flex justify-between py-1"><span>Subtotal:</span><span className="font-semibold">{fmtMoney(doc.subtotal)}</span></div>
-          {doc.tax_rate > 0 && <div className="flex justify-between py-1"><span>GST {doc.tax_rate}%:</span><span className="font-semibold">{fmtMoney(doc.tax_amount)}</span></div>}
+          {doc.tax_rate > 0 && <div className="flex justify-between py-1"><span>{taxLabel(doc.tax_rate)}:</span><span className="font-semibold">{fmtMoney(doc.tax_amount)}</span></div>}
           <div className="flex justify-between py-2 mt-1 border-t border-slate-300">
             <span className="font-bold">Grand Total (PKR):</span><span className="font-bold">{fmtMoney(doc.total)}</span>
           </div>
@@ -179,7 +173,7 @@ export function InvoicePrint({ doc, items, settings }: { doc: Doc; items: Item[]
             <th className="border border-[#0b1a3a] p-2 w-20">Quantity</th>
             <th className="border border-[#0b1a3a] p-2 w-24">Unit Price (Rs.)</th>
             <th className="border border-[#0b1a3a] p-2 w-24">Value for Sales Tax (Rs.)</th>
-            <th className="border border-[#0b1a3a] p-2 w-20">Sales Tax {doc.tax_rate}%</th>
+            <th className="border border-[#0b1a3a] p-2 w-20">{taxLabel(doc.tax_rate)}</th>
             <th className="border border-[#0b1a3a] p-2 w-28">Value Including Sales Tax</th>
           </tr>
         </thead>
