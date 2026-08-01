@@ -41,8 +41,8 @@ export function Footer() {
         <div className="lg:col-span-4">
           <h4 className="text-xs uppercase tracking-[0.2em] text-white/50 font-semibold">Get in touch</h4>
           <ul className="mt-4 space-y-3 text-sm">
-            <li className="flex items-center gap-3"><Mail className="h-4 w-4 text-[var(--steel)]" /> info@evertech.com.pk</li>
-            <li className="flex items-center gap-3"><MessageCircle className="h-4 w-4 text-[var(--steel)]" /> WhatsApp on request</li>
+            <li className="flex items-center gap-3"><Mail className="h-4 w-4 text-[var(--steel)]" /> sales@evertechcorp.com</li>
+            <li className="flex items-center gap-3"><MessageCircle className="h-4 w-4 text-[var(--steel)]" /> WhatsApp: 0325 5024236</li>
             <li className="flex items-center gap-3"><MapPin className="h-4 w-4 text-[var(--steel)]" /> Lahore, Pakistan</li>
           </ul>
         </div>
