@@ -321,13 +321,22 @@ export function PrintModal({ doc, kind, onClose, onEdit }: { doc: any; kind: "qu
   }, [doc.id, kind]);
 
   async function buildPdf() {
-    const node = document.getElementById("print-doc-node");
+    const container = document.getElementById("print-doc-node");
+    const node = (container?.querySelector(".a4-sheet") as HTMLElement | null) ?? container;
     if (!node) throw new Error("Nothing to export");
     const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
       import("html2canvas-pro"),
       import("jspdf"),
     ]);
-    const canvas = await html2canvas(node as HTMLElement, { scale: 2, backgroundColor: "#ffffff" });
+    const el = node as HTMLElement;
+    const prevTransform = el.style.transform;
+    el.style.transform = "none"; // capture at full A4 size even when previewed scaled on mobile
+    let canvas: HTMLCanvasElement;
+    try {
+      canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
+    } finally {
+      el.style.transform = prevTransform;
+    }
     const pdf = new jsPDF({ unit: "pt", format: "a4" });
     const pw = pdf.internal.pageSize.getWidth();
     const ph = pdf.internal.pageSize.getHeight();

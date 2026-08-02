@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import evertechLogo from "@/assets/evertech-logo.png";
 import { fmtDate, fmtMoney, taxLabel } from "@/lib/accounting";
 
@@ -30,27 +31,70 @@ type Doc = {
 
 type Item = { description: string; detail?: string; quantity: number; unit_price: number; amount: number };
 
+const A4_W = 794; // A4 width @96dpi
+const A4_H = 1123;
+
+/** Renders an exact A4 sheet, scaled down to fit narrow screens (mobile/tablet). */
+function A4Sheet({ children }: { children: React.ReactNode }) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [h, setH] = useState(A4_H);
+
+  useEffect(() => {
+    const measure = () => {
+      const w = wrap.current?.clientWidth ?? A4_W;
+      const s = Math.min(1, w / A4_W);
+      setScale(s);
+      const ih = inner.current?.scrollHeight ?? A4_H;
+      setH(Math.max(A4_H, ih) * s);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (wrap.current) ro.observe(wrap.current);
+    if (inner.current) ro.observe(inner.current);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={wrap} className="a4-wrap w-full" style={{ height: h }}>
+      <div
+        ref={inner}
+        className="a4-sheet bg-white shadow-sm"
+        style={{ width: A4_W, minHeight: A4_H, transform: `scale(${scale})`, transformOrigin: "top left" }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function QuotationPrint({ doc, items, settings }: { doc: Doc; items: Item[]; settings: Settings }) {
   const c = doc.customer_snapshot || {};
+  const company = settings.company_name || "Evertech Corporation";
   return (
-    <div className="print-doc bg-white text-slate-900 max-w-[820px] mx-auto p-10 text-[13px]">
+    <A4Sheet>
+    <div className="print-doc bg-white text-slate-900 p-10 text-[13px]">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="h-16 w-16 rounded-lg bg-[#0b1a3a] flex items-center justify-center">
             <img src={evertechLogo} alt="EverTech Corporation" className="h-11 w-11 object-contain" />
           </div>
           <div>
-            <div className="text-2xl font-black tracking-tight text-[#0b1a3a] leading-none">{settings.company_name}</div>
+            <div className="text-2xl font-black tracking-tight text-[#0b1a3a] leading-none">{company}</div>
             <div className="text-[11px] tracking-[0.18em] text-slate-500 mt-1">DELIVERING FUTURE</div>
           </div>
         </div>
         <div className="text-right">
           <div className="text-4xl font-bold text-[#0b1a3a]">QUOTATION</div>
-          <div className="mt-3 text-[12px] leading-tight text-slate-600">
-            <div className="font-bold text-slate-800">{settings.company_name}</div>
-            <div>{settings.address}</div>
-            <div className="mt-1">Mobile: {settings.phone}</div>
-            <div>{settings.website}</div>
+          <div className="mt-3 text-[12px] leading-[1.5] text-slate-600">
+            <div className="font-bold text-slate-800">{company}</div>
+            <div>Office #28, 4th Floor</div>
+            <div>Hafeez Centre, Gulberg III</div>
+            <div>Lahore 54660, Pakistan</div>
+            <div className="mt-1">+92 325 5024236</div>
+            <div>sales@evertechcorp.com</div>
+            <div>www.evertechcorp.com</div>
           </div>
         </div>
       </div>
@@ -116,16 +160,19 @@ export function QuotationPrint({ doc, items, settings }: { doc: Doc; items: Item
         </div>
       )}
     </div>
+    </A4Sheet>
   );
 }
 
 export function InvoicePrint({ doc, items, settings }: { doc: Doc; items: Item[]; settings: Settings }) {
   const c = doc.customer_snapshot || {};
+  const company = settings.company_name || "Evertech Corporation";
   return (
-    <div className="print-doc bg-white text-slate-900 max-w-[820px] mx-auto p-10 text-[13px]">
+    <A4Sheet>
+    <div className="print-doc bg-white text-slate-900 p-10 text-[13px]">
       <div className="text-center text-black">
         <div className="text-[34px] font-black tracking-tight uppercase leading-none border-b-2 border-black inline-block pb-1">
-          {settings.company_name}
+          {company}
         </div>
         <div className="mt-2 text-[12px] font-semibold">{settings.address}</div>
         <div className="text-[12px] font-semibold">Tel: {settings.phone}{settings.email && <>{"  "}Email: {settings.email}</>}</div>
@@ -215,9 +262,10 @@ export function InvoicePrint({ doc, items, settings }: { doc: Doc; items: Item[]
 
       <div className="mt-10 flex justify-between text-[12px]">
         <div><span className="font-bold">Signature & Stamp</span></div>
-        <div className="text-right">For {settings.company_name}</div>
+        <div className="text-right">For {company}</div>
       </div>
     </div>
+    </A4Sheet>
   );
 }
 
