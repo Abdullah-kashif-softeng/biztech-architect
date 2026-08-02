@@ -73,9 +73,9 @@ export function taxLabel(rate: number): string {
 
 export const TAX_OPTIONS = [
   { rate: 0, label: "No Tax (0%)" },
-  { rate: 5, label: "PRA 5%" },
-  { rate: 10, label: "GST 10%" },
-  { rate: 16, label: "GST 16%" },
+  { rate: 5, label: "PRA 5% — Software & Licensing" },
+  { rate: 10, label: "GST 10% — Laptops" },
+  { rate: 16, label: "GST 16% — Hardware" },
   { rate: 17, label: "GST 17%" },
   { rate: 18, label: "GST 18%" },
 ];

@@ -88,9 +88,7 @@ export function QuotationPrint({ doc, items, settings }: { doc: Doc; items: Item
         <div className="text-right">
           <div className="text-4xl font-bold text-[#0b1a3a]">QUOTATION</div>
           <div className="mt-3 text-[12px] leading-[1.5] text-slate-600">
-            <div className="font-bold text-slate-800">{company}</div>
-            <div>Office #28, 4th Floor</div>
-            <div>Hafeez Centre, Gulberg III</div>
+            <div>Office #28, 4th Floor, Hafeez Centre, Gulberg III</div>
             <div>Lahore 54660, Pakistan</div>
             <div className="mt-1">+92 325 5024236</div>
             <div>sales@evertechcorp.com</div>
@@ -171,10 +169,10 @@ export function InvoicePrint({ doc, items, settings }: { doc: Doc; items: Item[]
     <A4Sheet>
     <div className="print-doc bg-white text-slate-900 p-10 text-[13px]">
       <div className="text-center text-black">
-        <div className="text-[34px] font-black tracking-tight uppercase leading-none border-b-2 border-black inline-block pb-1">
-          {company}
+        <div className="text-[30px] font-black tracking-tight uppercase leading-tight">
+          {company || "EVERTECH CORPORATION"}
         </div>
-        <div className="mt-2 text-[12px] font-semibold">{settings.address}</div>
+        <div className="mt-1 text-[12px] font-semibold">{settings.address || "Office #28, 4th Floor, Hafeez Centre, Gulberg III, Lahore 54660, Pakistan"}</div>
         <div className="text-[12px] font-semibold">Tel: {settings.phone}{settings.email && <>{"  "}Email: {settings.email}</>}</div>
         <div className="mt-3 text-[13px] font-bold">NTN NO. {settings.ntn}{settings.strn && <>{"   "}STRN {settings.strn}</>}</div>
         <div className="mt-3 text-[20px] font-bold uppercase border-b-2 border-black inline-block">SALES TAX INVOICE</div>

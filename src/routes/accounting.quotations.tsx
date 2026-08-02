@@ -333,21 +333,21 @@ export function PrintModal({ doc, kind, onClose, onEdit }: { doc: any; kind: "qu
     el.style.transform = "none"; // capture at full A4 size even when previewed scaled on mobile
     let canvas: HTMLCanvasElement;
     try {
-      canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
+      canvas = await html2canvas(el, { scale: 3, backgroundColor: "#ffffff", width: 794, windowWidth: 794 });
     } finally {
       el.style.transform = prevTransform;
     }
-    const pdf = new jsPDF({ unit: "pt", format: "a4" });
+    const pdf = new jsPDF({ unit: "pt", format: "a4", compress: true });
     const pw = pdf.internal.pageSize.getWidth();
     const ph = pdf.internal.pageSize.getHeight();
     const imgH = (canvas.height * pw) / canvas.width;
-    const img = canvas.toDataURL("image/jpeg", 0.95);
+    const img = canvas.toDataURL("image/png");
     let y = 0;
-    pdf.addImage(img, "JPEG", 0, 0, pw, imgH);
+    pdf.addImage(img, "PNG", 0, 0, pw, imgH, undefined, "FAST");
     while (imgH - y > ph) {
       y += ph;
       pdf.addPage();
-      pdf.addImage(img, "JPEG", 0, -y, pw, imgH);
+      pdf.addImage(img, "PNG", 0, -y, pw, imgH, undefined, "FAST");
     }
     const filename = `${kind === "quotation" ? "Quotation" : "Invoice"}-${String(doc.number).replace(/\//g, "-")}.pdf`;
     return { pdf, filename };

@@ -169,6 +169,7 @@
   .print-area, .print-area * { visibility: visible; }
   .print-area { position: absolute; left: 0; top: 0; width: 100%; }
   .print-doc { box-shadow: none !important; }
+  .print-doc, .print-doc * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .a4-wrap { height: auto !important; }
   .a4-sheet { transform: none !important; width: 100% !important; box-shadow: none !important; min-height: 0 !important; }
   @page { size: A4; margin: 0; }
