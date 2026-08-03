@@ -1,27 +1,25 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { PageShell } from "@/components/site/PageShell";
 import { CategoryHero } from "@/components/site/CategoryHero";
-import { findService, services } from "@/data/catalog";
+import { useServices } from "@/data/live-catalog";
+import { LoadingBlock, EmptyBlock } from "@/components/site/DataState";
+
+const titleCase = (slug: string) =>
+  slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 export const Route = createFileRoute("/services/$service")({
-  loader: ({ params }) => {
-    const service = findService(params.service);
-    if (!service) throw notFound();
-    return { slug: service.slug };
-  },
-  head: ({ loaderData }) => {
-    const s = loaderData ? findService(loaderData.slug) : undefined;
+  head: ({ params }) => {
+    const label = titleCase(params.service);
     return {
-      meta: s
-        ? [
-            { title: `${s.name} — Enterprise IT Services | Evertech` },
-            { name: "description", content: `${s.tagline} ${s.intro.slice(0, 120)}` },
-            { property: "og:title", content: `${s.name} — Evertech Corporation` },
-            { property: "og:description", content: s.tagline },
-            { property: "og:image", content: s.image },
-          ]
-        : [],
+      meta: [
+        { title: `${label} — Enterprise IT Services | Evertech` },
+        { name: "description", content: `${label} services from Evertech Corporation — scoped, deployed and documented against measurable outcomes.` },
+        { property: "og:title", content: `${label} — Evertech Corporation` },
+        { property: "og:description", content: `How Evertech delivers ${label}: scope, process and industries served.` },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
     };
   },
   notFoundComponent: () => (
@@ -44,9 +42,30 @@ export const Route = createFileRoute("/services/$service")({
 });
 
 function ServicePage() {
-  const { slug } = Route.useLoaderData();
-  const s = findService(slug);
-  if (!s) throw notFound();
+  const { service: slug } = Route.useParams();
+  const { data: services, isLoading } = useServices();
+  const s = services?.find((x) => x.slug === slug);
+
+  if (isLoading) {
+    return (
+      <PageShell>
+        <LoadingBlock label="Loading service…" />
+      </PageShell>
+    );
+  }
+
+  if (!s) {
+    return (
+      <PageShell>
+        <EmptyBlock
+          title="Service not found"
+          message="This service is not available right now."
+          actionTo="/services"
+          actionLabel="Back to all services"
+        />
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell>
@@ -144,7 +163,7 @@ function ServicePage() {
         <div className="container-x">
           <div className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[var(--steel)] mb-6">Other services</div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {services.filter((x) => x.slug !== s.slug).map((x) => (
+            {(services ?? []).filter((x) => x.slug !== s.slug).map((x) => (
               <Link
                 key={x.slug}
                 to="/services/$service"
