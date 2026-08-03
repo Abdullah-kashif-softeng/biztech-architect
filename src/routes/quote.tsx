@@ -3,7 +3,8 @@ import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Send } from "lucide-react";
 import { z } from "zod";
 import { PageShell } from "@/components/site/PageShell";
-import { findProduct, findService, type FeaturedItem } from "@/data/catalog";
+import { useCategories, useServices, type FeaturedItem } from "@/data/live-catalog";
+import { LoadingBlock } from "@/components/site/DataState";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -43,6 +44,9 @@ function QuotePage() {
   const search = useSearch({ from: "/quote" });
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { data: categories, isLoading: catsLoading } = useCategories();
+  const { data: services, isLoading: svcsLoading } = useServices();
+  const catalogLoading = catsLoading || svcsLoading;
 
   // Selection state — used when the visitor lands on a category page
   // and can pick from the whole model list (or specify a custom item).
@@ -56,7 +60,7 @@ function QuotePage() {
 
   const context = useMemo(() => {
     if (search.type === "service" && search.service) {
-      const s = findService(search.service);
+      const s = services?.find((x) => x.slug === search.service);
       if (!s) return null;
       return {
         kind: "service" as const,
@@ -72,7 +76,7 @@ function QuotePage() {
       };
     }
     if (search.type === "product" && search.category) {
-      const c = findProduct(search.category);
+      const c = categories?.find((x) => x.slug === search.category);
       if (!c) return null;
       const isCustom = selectedItem === CUSTOM;
       const item =
@@ -109,7 +113,7 @@ function QuotePage() {
       };
     }
     return null;
-  }, [search, selectedItem, customName]);
+  }, [search, selectedItem, customName, categories, services]);
 
   const [specs, setSpecs] = useState<string[]>(context?.lines ?? []);
 
@@ -180,6 +184,13 @@ function QuotePage() {
   }
 
   if (!context) {
+    if (catalogLoading) {
+      return (
+        <PageShell>
+          <LoadingBlock label="Loading catalog…" />
+        </PageShell>
+      );
+    }
     return (
       <PageShell>
         <div className="container-x py-32 text-center">

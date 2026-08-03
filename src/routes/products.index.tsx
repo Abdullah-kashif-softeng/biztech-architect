@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
 import { PageShell } from "@/components/site/PageShell";
 import { CategoryHero } from "@/components/site/CategoryHero";
-import { productCategories } from "@/data/catalog";
+import { useCategories, FALLBACK_CATEGORY_IMAGE } from "@/data/live-catalog";
+import { LoadingBlock, EmptyBlock } from "@/components/site/DataState";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
@@ -17,13 +18,36 @@ export const Route = createFileRoute("/products/")({
 });
 
 function ProductsIndex() {
+  const { data: productCategories, isLoading } = useCategories();
+
+  if (isLoading) {
+    return (
+      <PageShell>
+        <LoadingBlock label="Loading product catalog…" />
+      </PageShell>
+    );
+  }
+
+  if (!productCategories || productCategories.length === 0) {
+    return (
+      <PageShell>
+        <EmptyBlock
+          title="No product categories yet"
+          message="Our product catalog is being updated. Please check back shortly or contact us for a tailored quotation."
+          actionTo="/"
+          actionLabel="Back to home"
+        />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell>
       <CategoryHero
         eyebrow="Product Catalog"
         title="Enterprise IT hardware, sourced and supported."
         tagline="Six product lines covering the full corporate IT estate — every category configured to workload, supplied with official warranty and after-sales support."
-        image={productCategories[0].image}
+        image={productCategories[0]?.image ?? FALLBACK_CATEGORY_IMAGE}
         breadcrumb={[{ label: "Home", to: "/" }, { label: "Products", to: "/products" }]}
       />
 

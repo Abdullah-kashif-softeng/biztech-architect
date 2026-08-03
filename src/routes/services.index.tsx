@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
 import { PageShell } from "@/components/site/PageShell";
 import { CategoryHero } from "@/components/site/CategoryHero";
-import { services } from "@/data/catalog";
+import { useServices, FALLBACK_SERVICE_IMAGE } from "@/data/live-catalog";
+import { LoadingBlock, EmptyBlock } from "@/components/site/DataState";
 
 export const Route = createFileRoute("/services/")({
   head: () => ({
@@ -17,13 +18,36 @@ export const Route = createFileRoute("/services/")({
 });
 
 function ServicesIndex() {
+  const { data: services, isLoading } = useServices();
+
+  if (isLoading) {
+    return (
+      <PageShell>
+        <LoadingBlock label="Loading services…" />
+      </PageShell>
+    );
+  }
+
+  if (!services || services.length === 0) {
+    return (
+      <PageShell>
+        <EmptyBlock
+          title="No services listed yet"
+          message="Our service catalog is being updated. Please check back shortly or contact us to discuss your requirement."
+          actionTo="/"
+          actionLabel="Back to home"
+        />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell>
       <CategoryHero
         eyebrow="Services"
         title="Engineered services. Documented outcomes."
         tagline="Four service lines covering surveillance, networking, IT support and corporate IT supply — each delivered against measurable scope and timelines."
-        image={services[0].image}
+        image={services[0]?.image ?? FALLBACK_SERVICE_IMAGE}
         breadcrumb={[{ label: "Home", to: "/" }, { label: "Services", to: "/services" }]}
       />
 

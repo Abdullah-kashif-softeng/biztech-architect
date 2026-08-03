@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
 import logo from "@/assets/evertech-logo.png";
-import { productCategories, services } from "@/data/catalog";
+import { useCategories, useServices } from "@/data/live-catalog";
 
 type MenuKey = "products" | "services" | null;
 
@@ -11,6 +11,8 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState<MenuKey>(null);
   const [mobileSub, setMobileSub] = useState<MenuKey>(null);
+  const { data: productCategories = [] } = useCategories();
+  const { data: services = [] } = useServices();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);

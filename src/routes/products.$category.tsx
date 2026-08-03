@@ -1,27 +1,25 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { PageShell } from "@/components/site/PageShell";
 import { CategoryHero } from "@/components/site/CategoryHero";
-import { findProduct, productCategories } from "@/data/catalog";
+import { useCategories } from "@/data/live-catalog";
+import { LoadingBlock, EmptyBlock } from "@/components/site/DataState";
+
+const titleCase = (slug: string) =>
+  slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 export const Route = createFileRoute("/products/$category")({
-  loader: ({ params }) => {
-    const category = findProduct(params.category);
-    if (!category) throw notFound();
-    return { slug: category.slug };
-  },
-  head: ({ loaderData }) => {
-    const c = loaderData ? findProduct(loaderData.slug) : undefined;
+  head: ({ params }) => {
+    const label = titleCase(params.category);
     return {
-      meta: c
-        ? [
-            { title: `${c.name} — Enterprise IT Products | Evertech` },
-            { name: "description", content: `${c.tagline} ${c.intro.slice(0, 120)}` },
-            { property: "og:title", content: `${c.name} — Evertech Corporation` },
-            { property: "og:description", content: c.tagline },
-            { property: "og:image", content: c.image },
-          ]
-        : [],
+      meta: [
+        { title: `${label} — Enterprise IT Products | Evertech` },
+        { name: "description", content: `${label} supplied, configured and supported by Evertech Corporation — genuine hardware with official warranty and after-sales support.` },
+        { property: "og:title", content: `${label} — Evertech Corporation` },
+        { property: "og:description", content: `Browse ${label} models we deploy most often and request a tailored quotation.` },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
     };
   },
   notFoundComponent: () => (
@@ -44,9 +42,30 @@ export const Route = createFileRoute("/products/$category")({
 });
 
 function CategoryPage() {
-  const { slug } = Route.useLoaderData();
-  const c = findProduct(slug);
-  if (!c) throw notFound();
+  const { category: slug } = Route.useParams();
+  const { data: productCategories, isLoading } = useCategories();
+  const c = productCategories?.find((p) => p.slug === slug);
+
+  if (isLoading) {
+    return (
+      <PageShell>
+        <LoadingBlock label="Loading category…" />
+      </PageShell>
+    );
+  }
+
+  if (!c) {
+    return (
+      <PageShell>
+        <EmptyBlock
+          title="Category not found"
+          message="This product category is not available right now."
+          actionTo="/products"
+          actionLabel="Back to all products"
+        />
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell>
@@ -96,6 +115,11 @@ function CategoryPage() {
           </div>
 
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {c.featured.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Models for this category are being updated — request a quotation and we will send current options.
+              </p>
+            )}
             {c.featured.map((f) => (
               <div key={f.name} className="flex flex-col bg-white border border-border hover:border-[var(--steel)] transition-colors">
                 <div className="p-7 flex-1">
@@ -191,7 +215,7 @@ function CategoryPage() {
         <div className="container-x">
           <div className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[var(--steel)] mb-6">Other product categories</div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {productCategories.filter((p) => p.slug !== c.slug).map((p) => (
+            {(productCategories ?? []).filter((p) => p.slug !== c.slug).map((p) => (
               <Link
                 key={p.slug}
                 to="/products/$category"
